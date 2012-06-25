@@ -4,11 +4,9 @@ typedef struct Particule {
 	float masse;
 } Particule_t;
 
-typedef struct Controleur {
-	rs_allocation in;
-	rs_allocation out;
-	int size;
-} Controleur_t;
+
+// Constantes
+float2 gravity = {0.f, 9.8f};
 
 // Paramètre de la méthode commune
 long previousTime;

@@ -4,61 +4,65 @@
 #include "rs_graphics.rsh"
 #include "particules.rsh"
 
+// Partie rendu graphique
 typedef struct Particule_Point {
 	float2 position;
 } Particule_Point_t;
 Particule_Point_t* points;
+rs_mesh mesh;
+long totalFrame;
 
-Controleur_t controleur;
-Particule_t *out;
-Particule_t *in;
-
+// Allocations de particules
 Particule_t* particules1;
 Particule_t* particules2;
 
+// Pointeurs vers les allocations d'entrée et de sortie
+Particule_t *aout;
+Particule_t *ain;
+
+// Script avec gestion de la physique
 rs_script physics;
 
-rs_mesh mesh;
-
+// Paramètres du script
+int count;
 int width;
 int height;
 bool thread_mode;
 
-long totalFrame;
-
+// Méthode exécutée à l'initialisation du script
 void init () {
 	thread_mode = false;
 }
 
 void init_particules() {
-	int count =  rsAllocationGetDimX(rsGetAllocation(particules1));
- 	
+	// Récupération du nombre de particules
+	count =  rsAllocationGetDimX(rsGetAllocation(particules1));
+	
+	// Initialisation des particules
  	Particule_t* p = particules1;
  	for(int i = 0; i < count; i++) {
- 	 	
  		p->position.x = rsRand(width);
  		p->position.y = rsRand(height);
- 		
  		p->vitesse.x = rsRand(0.f, 20.f) - 10;
  		p->vitesse.y = rsRand(0.f, 20.f) - 10;
- 		
  		p->masse = rsRand(0.f, 1.f);
- 		
  		p++;
  	}
 }
-float2 gravity = {0.f, 9.8f};
-void updatePosition() {
 
-	int count = rsAllocationGetDimX(rsGetAllocation(in));
+// fonctions appliquant les différents paramètres modifiant la position des particules
+void updatePosition() {
  	
- 	Particule_t* pIn = in;
- 	Particule_t* pOut = out;
+ 	Particule_t* in = ain;
+ 	Particule_t* out = aout;
+ 	
+ 	// Pour chaque particule...
  	for(int i = 0; i < count; i++) {
  	    float2 force = {0, 0};
-    	float2 position = pIn->position;
+    	float2 position = in->position;
     	
-    	Particule_t* p = in;
+    	// Calcul de la répulsivité
+    	Particule_t* p = ain;
     	for (int j = 0; j < count; j++) {
     		float2 position2 = p->position;
     		float2 vecteur = position - position2;
@@ -69,69 +73,78 @@ void updatePosition() {
     			continue;
     		}
     		if (distance < 100) {
-               force += (vecteur / (distance*distance)) * 50.f * p->masse * pIn->masse;
+               force += (vecteur / (distance*distance)) * 50.f * p->masse * in->masse;
     		}
     		
     		p++;
     	}
     	
-    	pOut->vitesse =  0.95f * pIn->vitesse;
-    	pOut->position = pIn->position;
+    	out->vitesse =  0.95f * in->vitesse;
+    	out->position = in->position;
     	
-    	pOut->vitesse += force;
- 	 	pOut->vitesse += pOut->masse * gravity * 0.1f;
- 		pOut->position+= pOut->vitesse;
+    	out->vitesse += (force + out->masse * gravity * 0.1f);
+ 		out->position+= out->vitesse;
  		
- 		if (pOut->position.x > width) {
- 			pOut->vitesse.x = - pOut->vitesse.x * 0.75;
- 			pOut->position.x = 2 * width - pOut->position.x;
+ 		// Rebonds sur les parois
+ 		if (out->position.x > width) {
+ 			out->vitesse.x = - out->vitesse.x * 0.95;
+ 			out->position.x = 2 * width - out->position.x;
  		}
- 		if (pOut->position.x < 0) {
- 			pOut->vitesse.x = - pOut->vitesse.x * 0.75;
- 			pOut->position.x = - pOut->position.x;
+ 		if (out->position.x < 0) {
+ 			out->vitesse.x = - out->vitesse.x * 0.95;
+ 			out->position.x = - out->position.x;
  		} 
  		
- 		if (pOut->position.y > height) {
- 			pOut->vitesse.y = - pOut->vitesse.y * 0.75;
- 			pOut->position.y = 2 * height - pOut->position.y;
+ 		if (out->position.y > height) {
+ 			out->vitesse.y = - out->vitesse.y * 0.95;
+ 			out->position.y = 2 * height - out->position.y;
  		}
- 		if (pOut->position.y < 0) {
- 			pOut->vitesse.y = - pOut->vitesse.y * 0.75;
- 			pOut->position.y = - pOut->position.y;
+ 		if (out->position.y < 0) {
+ 			out->vitesse.y = - out->vitesse.y * 0.95;
+ 			out->position.y = - out->position.y;
  		}
- 		pIn++;
- 		pOut++;
+ 		in++;
+ 		out++;
  	}
 }
 
-int root() {
+void draw() {
+
+	// Récupération des positions
+    for (int i=0; i < count; i++) {	
+        points[i].position = aout[i].position;
+    }
+
+	// Nettoyage de l'écran en noir
     rsgClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     
+    // Dessin et log
+    rsgDrawMesh(mesh);
+	drawFPS();
+}
+
+int root() {
+
+	// Changement des paramètres d'entrée et de sortie.
     if (totalFrame % 2) {
-    	out = particules1;
-    	in = particules2;
+    	aout = particules1;
+    	ain = particules2;
     } else {
-    	out = particules2;
-    	in = particules1;
+    	aout = particules2;
+    	ain = particules1;
     }
     totalFrame++;
     
+    // Utilisation du mode threadé ou non
 	if (thread_mode) {
-	    controleur.in = rsGetAllocation(in);
-    	controleur.out = rsGetAllocation(out);
-    	controleur.size = rsAllocationGetDimX(controleur.out);
-		rsForEach(physics, controleur.in, controleur.out, &controleur, controleur.size);
+    	rs_allocation in = rsGetAllocation(ain);
+    	rs_allocation out = rsGetAllocation(aout);
+		rsForEach(physics, in, out, &in, count);
 	} else {
 		updatePosition();
 	}
-	
-    int count = rsAllocationGetDimX(rsGetAllocation(out));
-    for (int i=0; i < count; i++) {
-        points[i].position = out[i].position;
-    }
-    
-    rsgDrawMesh(mesh);	
-	drawFPS();
-    
-    return 1;
+
+	draw();
+	    
+    return 1; // On désire être appelé le plus souvent possible (minimum toutes les millisondes ou au mieu)
 }

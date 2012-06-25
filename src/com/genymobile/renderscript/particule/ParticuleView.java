@@ -1,3 +1,4 @@
+
 package com.genymobile.renderscript.particule;
 
 import android.content.Context;
@@ -7,9 +8,9 @@ import android.renderscript.RenderScriptGL.SurfaceConfig;
 import android.util.AttributeSet;
 
 public class ParticuleView extends RSTextureView {
-    
+
     private static final int PARTICULE_COUNT = 750;
-    
+
     private RenderScriptGL mRs;
     private ParticuleRS particules;
 
@@ -20,37 +21,41 @@ public class ParticuleView extends RSTextureView {
     public ParticuleView(Context context, AttributeSet set) {
         super(context, set);
     }
-    
+
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
 
+        // Création du contexte RenderScript
         SurfaceConfig sc = new SurfaceConfig();
         mRs = createRenderScriptGL(sc);
 
+        // Création et initialisation de notre script
         particules = new ParticuleRS();
         particules.init(mRs, getResources(), PARTICULE_COUNT);
     }
-    
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        
+        // Définition des dimensions et bind
         particules.setWidthAndHeight(w, h);
-        mRs.bindRootScript(particules.getScript());   
+        mRs.bindRootScript(particules.getScript());
     }
-    
-    public void setThreadMode(boolean mode) {
-        if (particules != null) {
-            particules.setThreadMode(mode);
-        }
-    }
-    
+
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         if (mRs != null) {
             mRs = null;
             destroyRenderScriptGL();
+        }
+    }
+
+    public void setThreadMode(boolean mode) {
+        if (particules != null) {
+            particules.setThreadMode(mode);
         }
     }
 }
