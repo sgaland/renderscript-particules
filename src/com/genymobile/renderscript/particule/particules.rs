@@ -55,10 +55,13 @@ void updatePosition() {
  	
  	Particule_t* in = ain;
  	Particule_t* out = aout;
+ 	
+ 	// Pour chaque particule...
  	for(int i = 0; i < count; i++) {
  	    float2 force = {0, 0};
     	float2 position = in->position;
     	
+    	// Calcul de la répulsivité
     	Particule_t* p = ain;
     	for (int j = 0; j < count; j++) {
     		float2 position2 = p->position;
@@ -82,6 +85,7 @@ void updatePosition() {
     	out->vitesse += (force + out->masse * gravity * 0.1f);
  		out->position+= out->vitesse;
  		
+ 		// Rebonds sur les parois
  		if (out->position.x > width) {
  			out->vitesse.x = - out->vitesse.x * 0.95;
  			out->position.x = 2 * width - out->position.x;
@@ -139,8 +143,6 @@ int root() {
 	} else {
 		updatePosition();
 	}
-	
-
 
 	draw();
 	    

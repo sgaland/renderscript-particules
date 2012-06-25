@@ -26,9 +26,11 @@ public class ParticuleView extends RSTextureView {
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
 
+        // Création du contexte RenderScript
         SurfaceConfig sc = new SurfaceConfig();
         mRs = createRenderScriptGL(sc);
 
+        // Création et initialisation de notre script
         particules = new ParticuleRS();
         particules.init(mRs, getResources(), PARTICULE_COUNT);
     }
@@ -36,6 +38,8 @@ public class ParticuleView extends RSTextureView {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        
+        // Définition des dimensions et bind
         particules.setWidthAndHeight(w, h);
         mRs.bindRootScript(particules.getScript());
     }

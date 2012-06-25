@@ -29,6 +29,7 @@ void root(const Particule_t *in, Particule_t *out, const rs_allocation *inputDat
    		if (distance < 1) {
    			continue;
    		}
+
    		if (distance < 100) {
             force += (vecteur / (distance*distance)) * 50.f * p->masse * in->masse;
    		}
