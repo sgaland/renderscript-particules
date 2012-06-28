@@ -95,7 +95,7 @@ void updatePosition() {
     		p++;
     	}
     	
-    	out->vitesse =  0.95f * in->vitesse;
+    	out->vitesse = in->vitesse;
     	out->position = in->position;
     	
     	out->vitesse += (force + out->masse * gravity * 0.1f);
